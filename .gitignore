@@ -5,3 +5,4 @@ Include/
 src/__pycache__/
 pyqt interfaces
 .vscode
+src/resources/api_keys

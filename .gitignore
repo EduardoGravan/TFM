@@ -3,3 +3,5 @@ Scripts/
 Lib/
 Include/
 src/__pycache__/
+pyqt interfaces
+.vscode

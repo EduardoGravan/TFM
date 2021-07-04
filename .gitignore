@@ -3,6 +3,6 @@ Scripts/
 Lib/
 Include/
 src/__pycache__/
-pyqt interfaces
+pyqt interfaces/
 .vscode
 src/resources/api_keys

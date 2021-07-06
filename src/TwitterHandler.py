@@ -4,9 +4,10 @@ import sys
 class TwitterHandler:
     def __init__(self):
         self.__initialize_api()
+        self.__validate_login()
 
     def __initialize_api(self):
-        print("\n---------------------\n")
+        self.__print_separator()
         print("Initializing Twitter bot. . .")
 
         with open("./src/resources/api_keys", "r") as keys:
@@ -23,8 +24,6 @@ class TwitterHandler:
                 auth.set_access_token(access_token_key, access_token_secret)
 
                 self.api = tweepy.API(auth)
-                self.__validate_login()
-                print("\n---------------------\n")
             
             except SystemExit:
                 sys.exit(-1)
@@ -38,6 +37,7 @@ class TwitterHandler:
 
         if self.api.verify_credentials():
             print("Authentication OK")
+            self.__print_separator()
         else:
             print("Error during authentication, program will terminate")
             sys.exit(-1)
@@ -45,13 +45,17 @@ class TwitterHandler:
     def test_timeline(self):
         timeline = self.api.home_timeline()
         print(f"{timeline[0].user.name}:\n\n{timeline[0].text}\n")
-        print("\n---------------------\n")
+        self.__print_separator()
 
     def test_search(self, search_param):
         print(f"\nSearching for tweets with query: \"{search_param}\"")
-        print("\n---------------------\n")
+        self.__print_separator()
         tweets = self.api.search(search_param)
 
         for i in range(3):
             print(f"{tweets[i].user.name}:\n\n{tweets[i].text}")
-            print("\n---------------------\n")
+            self.__print_separator()
+
+    
+    def __print_separator(self):
+        print("\n---------------------\n")

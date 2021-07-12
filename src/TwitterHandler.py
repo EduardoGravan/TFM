@@ -47,14 +47,24 @@ class TwitterHandler:
         print(f"{timeline[0].user.name}:\n\n{timeline[0].text}\n")
         self.__print_separator()
 
-    def test_search(self, search_param):
-        print(f"\nSearching for tweets with query: \"{search_param}\"")
-        self.__print_separator()
-        tweets = self.api.search(search_param)
-
-        for i in range(3):
-            print(f"{tweets[i].user.name}:\n\n{tweets[i].text}")
+    def custom_twitter_search(self, search_param):
+        try:
+            clean_search_param = search_param.strip()
+            print(f"\nSearching for tweets with query: \"{clean_search_param}\"")
             self.__print_separator()
+            tweets = self.api.search(clean_search_param)
+
+            i = 0
+            for tweet in tweets:
+                print(f"{tweet.user.name}:\n\n{tweet.text}")
+                self.__print_separator()
+                
+                # TODO: hacer el break de verdad y no esta mierda
+                i += 1
+                if i == 5:
+                    break
+        except:
+            print("Error while searching for custom query")
 
     
     def __print_separator(self):

@@ -1,11 +1,11 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 
-class Ui_MainWindow(object):
 
-    def __init__(self):
+class Ui_MainWindow(object):
+    def __init__(self, twitter_handler):
         super().__init__()
-        self.counter = 0
+        self.twitter_handler = twitter_handler
         
         app = QtWidgets.QApplication(sys.argv)
         MainWindow = QtWidgets.QMainWindow()
@@ -33,43 +33,46 @@ class Ui_MainWindow(object):
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.centralwidget)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.verticalLayout_3 = QtWidgets.QVBoxLayout()
-        self.verticalLayout_3.setContentsMargins(25, 25, 25, 25)
-        self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.counterLabel = QtWidgets.QLabel(self.centralwidget)
-        self.counterLabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.counterLabel.setObjectName("counterLabel")
-        self.verticalLayout_3.addWidget(self.counterLabel)
-        self.addButton = QtWidgets.QPushButton(self.centralwidget)
-        self.addButton.setObjectName("addButton")
-        self.verticalLayout_3.addWidget(self.addButton)
-        self.resetButton = QtWidgets.QPushButton(self.centralwidget)
-        self.resetButton.setObjectName("resetButton")
-        self.verticalLayout_3.addWidget(self.resetButton)
-        self.verticalLayout_2.addLayout(self.verticalLayout_3)
+        self.verticalLayout = QtWidgets.QVBoxLayout()
+        self.verticalLayout.setContentsMargins(25, 25, 25, 25)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.textEdit.sizePolicy().hasHeightForWidth())
+        self.textEdit.setSizePolicy(sizePolicy)
+        self.textEdit.setObjectName("textEdit")
+        self.horizontalLayout.addWidget(self.textEdit, 0, QtCore.Qt.AlignHCenter)
+        self.search_button = QtWidgets.QPushButton(self.centralwidget)
+        self.search_button.setObjectName("search_button")
+        self.horizontalLayout.addWidget(self.search_button, 0, QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.line = QtWidgets.QFrame(self.centralwidget)
+        self.line.setFrameShape(QtWidgets.QFrame.HLine)
+        self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.line.setObjectName("line")
+        self.verticalLayout.addWidget(self.line)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout.addItem(spacerItem)
+        self.verticalLayout_2.addLayout(self.verticalLayout)
         MainWindow.setCentralWidget(self.centralwidget)
 
+        self.search_button.clicked.connect(self.search_twitter)
         self.retranslateUi(MainWindow)
-        self.addButton.clicked.connect(self.addToCounter)
-        self.resetButton.clicked.connect(self.resetCounter)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "TFM"))
-        self.counterLabel.setText(_translate("MainWindow", "Contador: 0"))
-        self.addButton.setText(_translate("MainWindow", "Añadir"))
-        self.resetButton.setText(_translate("MainWindow", "Reiniciar"))
+        self.search_button.setText(_translate("MainWindow", "Buscar"))
 
-    def addToCounter(self):
-        self.counter += 1
-        self.counterLabel.setText("Counter: " + str(self.counter))
-    
-    def resetCounter(self):
-        self.counter = 0
-        self.counterLabel.setText("Counter: 0")
-
+    def search_twitter(self):
+        query = self.textEdit.toPlainText()
+        self.twitter_handler.custom_twitter_search(query)
+        
 
 if __name__ == "__main__":
     Ui_MainWindow()
-    

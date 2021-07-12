@@ -1,9 +1,10 @@
+from TwitterHandler import TwitterHandler
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 
 
 class Ui_MainWindow(object):
-    def __init__(self, twitter_handler):
+    def __init__(self, twitter_handler: TwitterHandler):
         super().__init__()
         self.twitter_handler = twitter_handler
         

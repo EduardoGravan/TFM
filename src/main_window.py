@@ -1,5 +1,5 @@
 from io import BytesIO
-from TwitterHandler import TwitterHandler
+from twitter_handler import TwitterHandler
 from PyQt5 import QtCore, QtGui, QtWidgets
 import requests
 from PIL import Image

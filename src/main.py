@@ -1,4 +1,4 @@
-from TwitterHandler import TwitterHandler
+from twitter_handler import TwitterHandler
 import main_window
 
 def main():

@@ -1,13 +1,16 @@
+from datetime import datetime
 import sqlite3
+
+
 
 class DatabaseHandler:
 
-    def add_account(self, twitter_handler):
+    def add_account(self, twitter_handle):
         try:
-            con = sqlite3.connect("./src/resources/DB.db")
+            con = sqlite3.connect("./src/resources/database/DB.db")
             cursor = con.cursor()
 
-            cursor.execute(f"INSERT INTO Account VALUES(\'{twitter_handler.strip()}\');")
+            cursor.execute(f"INSERT INTO Account VALUES(\'{twitter_handle.strip()}\', \'{self.__get_timestamp()}\');")
             con.commit()
 
             cursor.close()
@@ -17,7 +20,7 @@ class DatabaseHandler:
             print("Error while attempting to create a new followed account.")
     
     def read_followed_accounts(self):
-        con = sqlite3.connect("./src/resources/DB.db")
+        con = sqlite3.connect("./src/resources/database/DB.db")
         cursor = con.cursor()
 
         cursor.execute("SELECT * FROM Account;")
@@ -26,15 +29,25 @@ class DatabaseHandler:
         cursor.close()
         con.close()
 
-        print(result)
+        return result
+    
+    def find_followed_account(self, twitter_handle):
+        con = sqlite3.connect("./src/resources/database/DB.db")
+        cursor = con.cursor()
+
+        cursor.execute(f"SELECT twitter_handle FROM Account WHERE twitter_handle=\'{twitter_handle}\';")
+
+        result = cursor.fetchall()
+        cursor.close()
+        con.close()
 
         return result
     
-    def delete_followed_account(self, twitter_handler):
-        con = sqlite3.connect("./src/resources/DB.db")
+    def delete_followed_account(self, twitter_handle):
+        con = sqlite3.connect("./src/resources/database/DB.db")
         cursor = con.cursor()
 
-        cursor.execute(f"DELETE FROM Account WHERE twitter_handler=\'{twitter_handler.strip()}\';")
+        cursor.execute(f"DELETE FROM Account WHERE twitter_handle=\'{twitter_handle.strip()}\';")
         con.commit()
 
         rows = cursor.rowcount
@@ -42,14 +55,8 @@ class DatabaseHandler:
         cursor.close()
         con.close()
 
-        if rows == 1:
-            print("Succesfully deleted followed twitter account")
-        else:
+        if rows != 1:
             print("Error while trying to delete followed twitter account.")
-            
 
-
-DatabaseHandler().add_account("sanchezrum")
-DatabaseHandler().read_followed_accounts()
-DatabaseHandler().delete_followed_account("sanchezrum")
-DatabaseHandler().read_followed_accounts()
+    def __get_timestamp(self):
+        return datetime.now().strftime(("%Y-%m-%d %H:%M:%S"))

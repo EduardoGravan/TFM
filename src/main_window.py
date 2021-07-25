@@ -1,16 +1,23 @@
-from io import BytesIO
-from twitter_handler import TwitterHandler
-from PyQt5 import QtCore, QtGui, QtWidgets
-import requests
-from PIL import Image
-
 import sys
+import requests
+from io import BytesIO
+from PIL import Image
+from PyQt5 import QtCore, QtGui, QtWidgets
+from twitter_handler import TwitterHandler
+from database_handler import DatabaseHandler
 
+class ClickableLabel(QtWidgets.QLabel):
+    clicked =  QtCore.pyqtSignal()
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        if QMouseEvent.button() == QtCore.Qt.LeftButton:
+            self.clicked.emit()
 
 class Ui_MainWindow(object):
-    def __init__(self, twitter_handler: TwitterHandler):
+    def __init__(self, twitter_handler: TwitterHandler, database_handler: DatabaseHandler):
         super().__init__()
         self.twitter_handler = twitter_handler
+        self.database_handler = database_handler
         
         app = QtWidgets.QApplication(sys.argv)
         MainWindow = QtWidgets.QMainWindow()
@@ -21,7 +28,7 @@ class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(900, 600)
+        MainWindow.resize(1280, 720)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -64,7 +71,7 @@ class Ui_MainWindow(object):
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
         self.tableWidget.setAlternatingRowColors(False)
         self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(3)
+        self.tableWidget.setColumnCount(4)
         self.tableWidget.setRowCount(1)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setVerticalHeaderItem(0, item)
@@ -75,11 +82,15 @@ class Ui_MainWindow(object):
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(2, item)
         item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setItem(0, 0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setItem(0, 1, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setItem(0, 2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setItem(0, 3, item)
         self.tableWidget.horizontalHeader().setCascadingSectionResizes(False)
         self.tableWidget.horizontalHeader().setMinimumSectionSize(75)
         self.tableWidget.horizontalHeader().setSortIndicatorShown(True)
@@ -106,6 +117,8 @@ class Ui_MainWindow(object):
         item = self.tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "Usuario"))
         item = self.tableWidget.horizontalHeaderItem(2)
+        item.setText(_translate("MainWindow", "Seguimiento"))
+        item = self.tableWidget.horizontalHeaderItem(3)
         item.setText(_translate("MainWindow", "Tweet"))
         __sortingEnabled = self.tableWidget.isSortingEnabled()
         self.tableWidget.setSortingEnabled(False)
@@ -114,6 +127,8 @@ class Ui_MainWindow(object):
         item = self.tableWidget.item(0, 1)
         item.setText(_translate("MainWindow", "test"))
         item = self.tableWidget.item(0, 2)
+        item.setText(_translate("MainWindow", "test"))
+        item = self.tableWidget.item(0, 3)
         item.setText(_translate("MainWindow", "test"))
         self.tableWidget.setSortingEnabled(__sortingEnabled)
 
@@ -138,13 +153,20 @@ class Ui_MainWindow(object):
             item = QtWidgets.QTableWidgetItem()
             item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
             self.tableWidget.setItem(i, 2, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+            self.tableWidget.setItem(i, 3, item)
 
-            image_label = self.__get_image_label(tweets[i].user.profile_image_url)
-            self.tableWidget.setCellWidget(i, 0, image_label)
+            profile_image_label = self.__get_profile_image_label(tweets[i].user.profile_image_url)
+            followed_image_label = self.__get_followed_image_label(tweets[i].user.screen_name)
+            self.tableWidget.setCellWidget(i, 0, profile_image_label)
             self.tableWidget.item(i, 1).setText(tweets[i].user.screen_name)
-            self.tableWidget.item(i, 2).setText(tweets[i].full_text)
+            self.tableWidget.setCellWidget(i, 2, followed_image_label)
+            self.tableWidget.item(i, 3).setText(f"RT @{tweets[i].retweeted_status.user.screen_name}: " + tweets[i].retweeted_status.full_text 
+                                                if tweets[i].full_text.startswith("RT @") 
+                                                else tweets[i].full_text)
         
-    def __get_image_label(self, image_url):
+    def __get_profile_image_label(self, image_url):
         container_widget = QtWidgets.QWidget()
         center_layout = QtWidgets.QHBoxLayout()
         
@@ -173,5 +195,48 @@ class Ui_MainWindow(object):
 
         return container_widget
 
-if __name__ == "__main__":
-    Ui_MainWindow()
+    def __get_followed_image_label(self, twitter_handle):
+        container_widget = QtWidgets.QWidget()
+        center_layout = QtWidgets.QHBoxLayout()
+        
+        image_label = ClickableLabel()
+        image_label.setFixedSize(60, 60)
+        image_label.setScaledContents(True)
+
+        center_layout.addWidget(image_label)
+        container_widget.setLayout(center_layout)
+        
+        try:
+            if self.database_handler.find_followed_account(twitter_handle):
+                pixmap = QtGui.QPixmap("./src/resources/images/check_mark.png")
+            else:
+                pixmap = QtGui.QPixmap("./src/resources/images/follow_account.png")
+                image_label.clicked.connect(lambda: self.__follow_account(twitter_handle, image_label))
+
+            image_label.setPixmap(pixmap)
+        
+        except:
+            image_label.setText("")
+
+        return container_widget
+
+    def __follow_account(self, twitter_handle, image_label):
+        message_box = QtWidgets.QMessageBox()
+        message_box.setIcon(QtWidgets.QMessageBox.Question)
+        message_box.setWindowTitle("Confirmación de seguimiento")
+        message_box.setText(f"¿Desea añadir la cuenta @{twitter_handle} a la lista de cuentas seguidas?")
+        message_box.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        yes_button = message_box.button(QtWidgets.QMessageBox.Yes)
+        yes_button.setText("Sí")
+        no_button = message_box.button(QtWidgets.QMessageBox.No)
+        no_button.setText("No")
+        message_box.setDefaultButton(QtWidgets.QMessageBox.No)
+        message_box.exec_()
+
+        if message_box.clickedButton() == yes_button:
+            self.database_handler.add_account(twitter_handle)
+            image_label.clicked.disconnect()
+            image_label.setPixmap(QtGui.QPixmap("./src/resources/images/check_mark.png"))
+
+
+

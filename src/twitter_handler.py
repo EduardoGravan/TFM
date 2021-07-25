@@ -53,7 +53,7 @@ class TwitterHandler:
             print(f"\nSearching for tweets with query: \"{clean_search_param}\"")
             self.__print_separator()
 
-            return self.api.search(clean_search_param, tweet_mode='extended', count=50)
+            return self.api.search(clean_search_param, tweet_mode="extended", count=50)
 
         except:
             print("Error while searching for custom query")

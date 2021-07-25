@@ -209,6 +209,7 @@ class Ui_MainWindow(object):
         try:
             if self.database_handler.find_followed_account(twitter_handle):
                 pixmap = QtGui.QPixmap("./src/resources/images/check_mark.png")
+                image_label.clicked.connect(lambda: self.__unfollow_account(twitter_handle, image_label))
             else:
                 pixmap = QtGui.QPixmap("./src/resources/images/follow_account.png")
                 image_label.clicked.connect(lambda: self.__follow_account(twitter_handle, image_label))
@@ -221,22 +222,36 @@ class Ui_MainWindow(object):
         return container_widget
 
     def __follow_account(self, twitter_handle, image_label):
+        message_box = self.__generate_message_box()
+        message_box.setText(f"¿Desea añadir la cuenta @{twitter_handle} a la lista de cuentas seguidas?")
+        result = message_box.exec_()
+
+        if result == QtWidgets.QMessageBox.Yes:
+            self.database_handler.add_account(twitter_handle)
+            image_label.clicked.disconnect()
+            image_label.setPixmap(QtGui.QPixmap("./src/resources/images/check_mark.png"))
+            image_label.clicked.connect(lambda: self.__unfollow_account(twitter_handle, image_label))
+
+    def __unfollow_account(self, twitter_handle, image_label):
+        message_box = self.__generate_message_box()
+        message_box.setText(f"¿Desea eliminar la cuenta @{twitter_handle} de la lista de cuentas seguidas?")
+        result = message_box.exec_()
+
+        if result == QtWidgets.QMessageBox.Yes:
+            self.database_handler.delete_followed_account(twitter_handle)
+            image_label.clicked.disconnect()
+            image_label.setPixmap(QtGui.QPixmap("./src/resources/images/follow_account.png"))
+            image_label.clicked.connect(lambda: self.__follow_account(twitter_handle, image_label))
+
+    def __generate_message_box(self):
         message_box = QtWidgets.QMessageBox()
         message_box.setIcon(QtWidgets.QMessageBox.Question)
         message_box.setWindowTitle("Confirmación de seguimiento")
-        message_box.setText(f"¿Desea añadir la cuenta @{twitter_handle} a la lista de cuentas seguidas?")
         message_box.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         yes_button = message_box.button(QtWidgets.QMessageBox.Yes)
         yes_button.setText("Sí")
         no_button = message_box.button(QtWidgets.QMessageBox.No)
         no_button.setText("No")
         message_box.setDefaultButton(QtWidgets.QMessageBox.No)
-        message_box.exec_()
 
-        if message_box.clickedButton() == yes_button:
-            self.database_handler.add_account(twitter_handle)
-            image_label.clicked.disconnect()
-            image_label.setPixmap(QtGui.QPixmap("./src/resources/images/check_mark.png"))
-
-
-
+        return message_box

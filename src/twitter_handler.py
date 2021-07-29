@@ -58,6 +58,8 @@ class TwitterHandler:
         except:
             print("Error while searching for custom query")
 
-    
+    def recover_account_info(self, handle):
+        return self.api.get_user(handle)
+
     def __print_separator(self):
         print("\n---------------------\n")

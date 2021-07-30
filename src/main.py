@@ -1,6 +1,6 @@
+import main_window
 from database_handler import DatabaseHandler
 from twitter_handler import TwitterHandler
-import main_window
 
 def main():
     twitter_handler = TwitterHandler()

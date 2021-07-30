@@ -1,5 +1,5 @@
-import tweepy
 import sys
+import tweepy
 
 class TwitterHandler:
     def __init__(self):
@@ -63,3 +63,47 @@ class TwitterHandler:
 
     def __print_separator(self):
         print("\n---------------------\n")
+
+    def lookup_users(self, query):
+            return self.api.search_users(query, 2)
+
+    def full_archive_search(self, query, handle="", fromDate="-1", toDate="-1"):
+        full_query = query if handle == "" else f"{query} from:{handle}"
+
+        if fromDate != -1:
+            from_date = self.__format_date_to_archive(fromDate) + "0000"
+            if toDate != -1:
+                to_date = self.__format_date_to_archive(toDate) + "2359"
+                result = self.api.search_full_archive('tfm', full_query, fromDate=from_date, toDate=to_date)
+            else:
+                result = self.api.search_full_archive('tfm', full_query, fromDate=from_date)
+        else:
+            if toDate != -1:
+                to_date = self.__format_date_to_archive(toDate) + "2359"
+                result = self.api.search_full_archive('tfm', full_query, toDate=to_date)
+            else:
+                result = self.api.search_full_archive('tfm', full_query)
+
+        return result
+
+    def __format_date_to_archive(self, date):
+        formatted_date = date.split("/")
+        str_formatted_date = formatted_date[2] + formatted_date[1] + formatted_date [0]
+        return str_formatted_date
+
+if __name__ == '__main__':
+    #print(TwitterHandler().lookup_users("sanchezrum"))
+    tweets = TwitterHandler().full_archive_search("", "sanchezrum")
+
+    for tweet in tweets:
+        if tweet.truncated:
+            print(f"{tweet.user.screen_name}: {tweet.extended_tweet['full_text']}")
+        else:
+            if hasattr(tweet, "retweeted_status"):
+                if tweet.retweeted_status.truncated:
+                    print(f"{tweet.user.screen_name}: RT @{tweet.retweeted_status.user.screen_name}: {tweet.retweeted_status.extended_tweet['full_text']}")
+                else:
+                    print(f"{tweet.user.screen_name}: RT @{tweet.retweeted_status.user.screen_name}: {tweet.retweeted_status.text}")
+            else:
+                print(f"{tweet.user.screen_name}: {tweet.text}")
+

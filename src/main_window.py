@@ -1,10 +1,24 @@
 import sys
+import time
 import requests
 from io import BytesIO
 from PIL import Image
 from PyQt5 import QtCore, QtGui, QtWidgets
 from twitter_handler import TwitterHandler
 from database_handler import DatabaseHandler
+
+
+class ImageLoader(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+    progress = QtCore.pyqtSignal(QtWidgets.QTableWidget, int, QtWidgets.QWidget)
+
+
+    def run(self, ui_window, table, image_list):
+        for i in range(len(image_list)):
+            QtWidgets.QApplication.processEvents()
+            self.progress.emit(table, i, ui_window.get_profile_image_label(image_list[i]))
+            QtWidgets.QApplication.processEvents()
+        self.finished.emit()
 
 
 class ClickableLabel(QtWidgets.QLabel):
@@ -437,6 +451,7 @@ class Ui_MainWindow(object):
             loading_dialog = self.__loading_menu(
                 "tweets", horizontal_size=250
             )
+            profile_image_list = []
             self.tableWidget_simple.setRowCount(0)
             tweets = self.twitter_handler.custom_twitter_search(query)
             self.tableWidget_simple.setRowCount(len(tweets))
@@ -458,13 +473,12 @@ class Ui_MainWindow(object):
                 item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
                 self.tableWidget_simple.setItem(i, 4, item)
 
-                profile_image_label = self.__get_profile_image_label(
-                    tweets[i].user.profile_image_url
-                )
+                profile_image_list.append(tweets[i].user.profile_image_url_https)
+
                 followed_image_label = self.__get_followed_image_label(
                     tweets[i].user.screen_name
                 )
-                self.tableWidget_simple.setCellWidget(i, 0, profile_image_label)
+
                 self.tableWidget_simple.item(i, 1).setText(tweets[i].user.screen_name)
                 self.tableWidget_simple.setCellWidget(i, 2, followed_image_label)
                 self.tableWidget_simple.item(i, 3).setText(
@@ -477,6 +491,7 @@ class Ui_MainWindow(object):
                     else tweets[i].full_text
                 )
 
+            self.launch_profile_image_thread(self.tableWidget_simple, profile_image_list)
             loading_dialog.close()
 
     def __populate_advanced_search_table(self):
@@ -492,6 +507,7 @@ class Ui_MainWindow(object):
 
         else:
             loading_dialog = self.__loading_menu("tweets", horizontal_size=250)
+            profile_image_list = []
             self.tableWidget_advanced.setRowCount(0)
             tweets = self.twitter_handler.full_archive_search(
                 query,
@@ -520,13 +536,12 @@ class Ui_MainWindow(object):
                 item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
                 self.tableWidget_advanced.setItem(i, 4, item)
 
-                profile_image_label = self.__get_profile_image_label(
-                    tweets[i].user.profile_image_url
-                )
+                profile_image_list.append(tweets[i].user.profile_image_url_https)
+
                 followed_image_label = self.__get_followed_image_label(
                     tweets[i].user.screen_name
                 )
-                self.tableWidget_advanced.setCellWidget(i, 0, profile_image_label)
+
                 tweet_text = self.__recover_archive_tweet_text(tweets[i])
                 self.tableWidget_advanced.item(i, 1).setText(tweets[i].user.screen_name)
                 self.tableWidget_advanced.setCellWidget(i, 2, followed_image_label)
@@ -535,10 +550,12 @@ class Ui_MainWindow(object):
                 )
                 self.tableWidget_advanced.item(i, 4).setText(tweet_text)
 
+            self.launch_profile_image_thread(self.tableWidget_advanced, profile_image_list)
             loading_dialog.close()
 
     def __populate_following_table(self):
         loading_dialog = self.__loading_menu("cuentas seguidas", horizontal_size=300)
+        profile_image_list = []
         self.tableWidget_following.setRowCount(0)
 
         accounts = self.database_handler.read_followed_accounts()
@@ -565,11 +582,9 @@ class Ui_MainWindow(object):
                 accounts[i][0]
             )
 
-            profile_image_label = self.__get_profile_image_label(
-                additional_acc_info.profile_image_url
-            )
+            profile_image_list.append(additional_acc_info.profile_image_url_https)
+
             followed_image_label = self.__get_followed_image_label(accounts[i][0])
-            self.tableWidget_following.setCellWidget(i, 0, profile_image_label)
             self.tableWidget_following.item(i, 1).setText(accounts[i][0])
             self.tableWidget_following.setCellWidget(i, 2, followed_image_label)
             self.tableWidget_following.item(i, 3).setText(
@@ -577,9 +592,10 @@ class Ui_MainWindow(object):
             )
             self.tableWidget_following.item(i, 4).setText(accounts[i][1])
 
+        self.launch_profile_image_thread(self.tableWidget_following, profile_image_list)
         loading_dialog.close()
 
-    def __get_profile_image_label(self, image_url):
+    def get_profile_image_label(self, image_url):
         container_widget = QtWidgets.QWidget()
         center_layout = QtWidgets.QHBoxLayout()
 
@@ -700,3 +716,23 @@ class Ui_MainWindow(object):
                 str_tweet = tweet.text
 
         return str_tweet
+
+    def launch_profile_image_thread(self, table, profile_image_list):
+        self.thread = QtCore.QThread()
+        self.worker = ImageLoader()
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(lambda: self.worker.run(self, table, profile_image_list))
+        self.worker.progress.connect(self.load_image)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+
+    def load_images(self, table, image_widget_list):
+        for i in range(len(image_widget_list)):
+            table.setCellWidget(i, 0, image_widget_list[i])
+
+    def load_image(self, table, index, image_widget):
+        table.setCellWidget(index, 0, image_widget)

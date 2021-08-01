@@ -54,6 +54,29 @@ class TwitterHandler:
     def lookup_users(self, query):
         return self.api.search_users(query, 2)
 
+    def thirty_day_search(self, query, handle="", fromDate="-1", toDate="-1"):
+        full_query = query if handle == "" else f"{query} from:{handle}"
+
+        if fromDate != -1:
+            from_date = self.__format_date_to_archive(fromDate) + "0000"
+            if toDate != -1:
+                to_date = self.__format_date_to_archive(toDate) + "2359"
+                result = self.api.search_30_day(
+                    "tfm30day", full_query, fromDate=from_date, toDate=to_date
+                )
+            else:
+                result = self.api.search_30_day(
+                    "tfm30day", full_query, fromDate=from_date
+                )
+        else:
+            if toDate != -1:
+                to_date = self.__format_date_to_archive(toDate) + "2359"
+                result = self.api.search_30_day("tfm30day", full_query, toDate=to_date)
+            else:
+                result = self.api.search_30_day("tfm30day", full_query)
+
+        return result
+
     def full_archive_search(self, query, handle="", fromDate="-1", toDate="-1"):
         full_query = query if handle == "" else f"{query} from:{handle}"
 
@@ -80,4 +103,5 @@ class TwitterHandler:
     def __format_date_to_archive(self, date):
         formatted_date = date.split("/")
         str_formatted_date = formatted_date[2] + formatted_date[1] + formatted_date[0]
+
         return str_formatted_date

@@ -43,7 +43,7 @@ class TwitterHandler:
             sys.exit(-1)
 
     def custom_twitter_search(self, search_param):
-        return self.api.search(search_param.strip(), tweet_mode="extended", count=50)
+        return self.api.search(search_param.strip(), tweet_mode="extended", count=200)
 
     def recover_account_info(self, handle):
         return self.api.get_user(handle)

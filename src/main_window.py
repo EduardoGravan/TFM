@@ -1,11 +1,12 @@
 import sys
+import csv
 import requests
 from PIL import Image
 from io import BytesIO
-from datetime import date, timedelta
 from PyQt5 import QtCore, QtGui, QtWidgets
 from twitter_handler import TwitterHandler
 from database_handler import DatabaseHandler
+from datetime import date, datetime, timedelta
 
 
 class ImageLoader(QtCore.QObject):
@@ -37,6 +38,10 @@ class Ui_MainWindow(object):
         super().__init__()
         self.twitter_handler = twitter_handler
         self.database_handler = database_handler
+
+        self.last_basic_tweets = []
+        self.last_advanced_tweets = []
+        self.following_list = []
 
         app = QtWidgets.QApplication(sys.argv)
         MainWindow = QtWidgets.QMainWindow()
@@ -100,12 +105,20 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.textEdit.sizePolicy().hasHeightForWidth())
         self.textEdit.setSizePolicy(sizePolicy)
+        self.textEdit.setMinimumSize(QtCore.QSize(0, 75))
+        self.textEdit.setMaximumSize(QtCore.QSize(16777215, 75))
         self.textEdit.setAcceptRichText(False)
         self.textEdit.setObjectName("textEdit")
         self.horizontalLayout.addWidget(self.textEdit, 0, QtCore.Qt.AlignVCenter)
         self.search_button = QtWidgets.QPushButton(self.tab_1)
         self.search_button.setObjectName("search_button")
-        self.horizontalLayout.addWidget(self.search_button, 0, QtCore.Qt.AlignHCenter)
+        self.horizontalLayout.addWidget(self.search_button)
+        self.label_save_basic_search = ClickableLabel(self.tab_1)
+        self.label_save_basic_search.setMinimumSize(QtCore.QSize(60, 60))
+        self.label_save_basic_search.setMaximumSize(QtCore.QSize(60, 60))
+        self.label_save_basic_search.setText("")
+        self.label_save_basic_search.setObjectName("label_save_basic_search")
+        self.horizontalLayout.addWidget(self.label_save_basic_search)
         self.verticalLayout_4.addLayout(self.horizontalLayout)
         self.line = QtWidgets.QFrame(self.tab_1)
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
@@ -189,6 +202,31 @@ class Ui_MainWindow(object):
         self.textEdit_user_handle.setAcceptRichText(False)
         self.textEdit_user_handle.setObjectName("textEdit_user_handle")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.textEdit_user_handle)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setContentsMargins(50, -1, 50, -1)
+        self.horizontalLayout_3.setSpacing(0)
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.checkBox_date_from = QtWidgets.QCheckBox(self.frame)
+        self.checkBox_date_from.setMaximumSize(QtCore.QSize(150, 16777215))
+        self.checkBox_date_from.setObjectName("checkBox_date_from")
+        self.horizontalLayout_3.addWidget(self.checkBox_date_from)
+        self.dateEdit_from = QtWidgets.QDateEdit(self.frame)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.dateEdit_from.sizePolicy().hasHeightForWidth())
+        self.dateEdit_from.setSizePolicy(sizePolicy)
+        self.dateEdit_from.setMaximumSize(QtCore.QSize(100, 16777215))
+        self.dateEdit_from.setDateTime(QtCore.QDateTime(QtCore.QDate(2006, 3, 21), QtCore.QTime(0, 0, 0)))
+        self.dateEdit_from.setMinimumDateTime(QtCore.QDateTime(QtCore.QDate(2006, 3, 21), QtCore.QTime(0, 0, 0)))
+        self.dateEdit_from.setMinimumDate(QtCore.QDate(2006, 3, 21))
+        self.dateEdit_from.setObjectName("dateEdit_from")
+        self.horizontalLayout_3.addWidget(self.dateEdit_from)
+        self.formLayout.setLayout(9, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_3)
+        self.radioButton_30_day = QtWidgets.QRadioButton(self.frame)
+        self.radioButton_30_day.setMinimumSize(QtCore.QSize(0, 40))
+        self.radioButton_30_day.setObjectName("radioButton_30_day")
+        self.formLayout.setWidget(11, QtWidgets.QFormLayout.LabelRole, self.radioButton_30_day)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setContentsMargins(50, -1, 50, -1)
         self.horizontalLayout_2.setSpacing(0)
@@ -202,30 +240,25 @@ class Ui_MainWindow(object):
         self.dateEdit_to.setMinimumDate(QtCore.QDate(2006, 3, 21))
         self.dateEdit_to.setObjectName("dateEdit_to")
         self.horizontalLayout_2.addWidget(self.dateEdit_to)
+        spacerItem = QtWidgets.QSpacerItem(450, 20, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_2.addItem(spacerItem)
+        self.label_save_advanced_search = ClickableLabel(self.frame)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label_save_advanced_search.sizePolicy().hasHeightForWidth())
+        self.label_save_advanced_search.setSizePolicy(sizePolicy)
+        self.label_save_advanced_search.setMinimumSize(QtCore.QSize(40, 40))
+        self.label_save_advanced_search.setMaximumSize(QtCore.QSize(40, 40))
+        self.label_save_advanced_search.setText("")
+        self.label_save_advanced_search.setObjectName("label_save_advanced_search")
+        self.horizontalLayout_2.addWidget(self.label_save_advanced_search)
         self.formLayout.setLayout(11, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_2)
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_3.setContentsMargins(50, -1, 50, -1)
-        self.horizontalLayout_3.setSpacing(0)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.checkBox_date_from = QtWidgets.QCheckBox(self.frame)
-        self.checkBox_date_from.setMaximumSize(QtCore.QSize(150, 16777215))
-        self.checkBox_date_from.setObjectName("checkBox_date_from")
-        self.horizontalLayout_3.addWidget(self.checkBox_date_from)
-        self.dateEdit_from = QtWidgets.QDateEdit(self.frame)
-        self.dateEdit_from.setMaximumSize(QtCore.QSize(100, 16777215))
-        self.dateEdit_from.setDateTime(QtCore.QDateTime(QtCore.QDate(2006, 3, 21), QtCore.QTime(0, 0, 0)))
-        self.dateEdit_from.setMinimumDateTime(QtCore.QDateTime(QtCore.QDate(2006, 3, 21), QtCore.QTime(0, 0, 0)))
-        self.dateEdit_from.setMinimumDate(QtCore.QDate(2006, 3, 21))
-        self.dateEdit_from.setObjectName("dateEdit_from")
-        self.horizontalLayout_3.addWidget(self.dateEdit_from)
-        self.formLayout.setLayout(9, QtWidgets.QFormLayout.FieldRole, self.horizontalLayout_3)
         self.radioButton_full_archive = QtWidgets.QRadioButton(self.frame)
+        self.radioButton_full_archive.setMinimumSize(QtCore.QSize(0, 0))
         self.radioButton_full_archive.setChecked(True)
         self.radioButton_full_archive.setObjectName("radioButton_full_archive")
         self.formLayout.setWidget(9, QtWidgets.QFormLayout.LabelRole, self.radioButton_full_archive)
-        self.radioButton_30_day = QtWidgets.QRadioButton(self.frame)
-        self.radioButton_30_day.setObjectName("radioButton_30_day")
-        self.formLayout.setWidget(11, QtWidgets.QFormLayout.LabelRole, self.radioButton_30_day)
         self.verticalLayout_7.addWidget(self.frame)
         self.advanced_search_button = QtWidgets.QPushButton(self.tab_6)
         self.advanced_search_button.setObjectName("advanced_search_button")
@@ -280,14 +313,33 @@ class Ui_MainWindow(object):
         self.line_3.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_3.setObjectName("line_3")
         self.verticalLayout_3.addWidget(self.line_3)
+        self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_4.setSpacing(15)
+        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem1)
         self.update_follower_list_button = QtWidgets.QPushButton(self.tab_5)
         self.update_follower_list_button.setObjectName("update_follower_list_button")
-        self.verticalLayout_3.addWidget(self.update_follower_list_button, 0, QtCore.Qt.AlignHCenter)
+        self.horizontalLayout_4.addWidget(self.update_follower_list_button, 0, QtCore.Qt.AlignHCenter)
+        self.label_lookup_following = ClickableLabel(self.tab_5)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label_lookup_following.sizePolicy().hasHeightForWidth())
+        self.label_lookup_following.setSizePolicy(sizePolicy)
+        self.label_lookup_following.setMinimumSize(QtCore.QSize(60, 60))
+        self.label_lookup_following.setMaximumSize(QtCore.QSize(60, 60))
+        self.label_lookup_following.setText("")
+        self.label_lookup_following.setObjectName("label_lookup_following")
+        self.horizontalLayout_4.addWidget(self.label_lookup_following)
+        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem2)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         self.tableWidget_following = QtWidgets.QTableWidget(self.tab_5)
         self.tableWidget_following.setAlternatingRowColors(False)
         self.tableWidget_following.setTextElideMode(QtCore.Qt.ElideRight)
         self.tableWidget_following.setObjectName("tableWidget_following")
-        self.tableWidget_following.setColumnCount(5)
+        self.tableWidget_following.setColumnCount(6)
         self.tableWidget_following.setRowCount(0)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_following.setHorizontalHeaderItem(0, item)
@@ -299,6 +351,8 @@ class Ui_MainWindow(object):
         self.tableWidget_following.setHorizontalHeaderItem(3, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget_following.setHorizontalHeaderItem(4, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget_following.setHorizontalHeaderItem(5, item)
         self.tableWidget_following.horizontalHeader().setCascadingSectionResizes(False)
         self.tableWidget_following.horizontalHeader().setMinimumSectionSize(75)
         self.tableWidget_following.horizontalHeader().setSortIndicatorShown(True)
@@ -327,10 +381,28 @@ class Ui_MainWindow(object):
         self.update_follower_list_button.clicked.connect(self.update_following_list)
         self.radioButton_full_archive.clicked.connect(self.radio_full_archive_clicked)
         self.radioButton_30_day.clicked.connect(self.radio_30_day_clicked)
-        self.dateEdit_to.setMaximumDate(QtCore.QDate(int(today[2]), int(today[1]), int(today[0])))
-        self.dateEdit_from.setMaximumDate(QtCore.QDate(int(today[2]), int(today[1]), int(today[0])))
+        self.dateEdit_to.setMaximumDate(
+            QtCore.QDate(int(today[2]), int(today[1]), int(today[0]))
+        )
+        self.dateEdit_from.setMaximumDate(
+            QtCore.QDate(int(today[2]), int(today[1]), int(today[0]))
+        )
         self.dateEdit_from.setCalendarPopup(True)
         self.dateEdit_to.setCalendarPopup(True)
+
+        pixmap = QtGui.QPixmap("./src/resources/images/save_button.png")
+        self.label_save_basic_search.setScaledContents(True)
+        self.label_save_basic_search.clicked.connect(self.save_basic_search)
+        self.label_save_basic_search.setPixmap(pixmap)
+        self.label_save_advanced_search.setScaledContents(True)
+        self.label_save_advanced_search.clicked.connect(self.save_advanced_search)
+        self.label_save_advanced_search.setPixmap(pixmap)
+
+        pixmap = QtGui.QPixmap("./src/resources/images/lookup_tweets.png")
+        self.label_lookup_following.setScaledContents(True)
+        self.label_lookup_following.clicked.connect(self.lookup_following_tweets)
+        self.label_lookup_following.setPixmap(pixmap)
+
 
         self.retranslateUi(MainWindow)
         self.tab_widget.setCurrentIndex(0)
@@ -340,7 +412,7 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "TFM"))
         self.label.setText(_translate("MainWindow", "Búsqueda rápida en Twitter"))
-        self.textEdit.setPlaceholderText(_translate("MainWindow", "Introduzca sus términos de búsqueda en este campo. . . (Recupera hasta 50 tweets recientes que coincidan con la consulta)"))
+        self.textEdit.setPlaceholderText(_translate("MainWindow", "Introduzca sus términos de búsqueda en este campo. . . (Recupera hasta 200 tweets recientes que coincidan con la consulta)"))
         self.search_button.setText(_translate("MainWindow", "Buscar"))
         self.tableWidget_simple.setSortingEnabled(True)
         item = self.tableWidget_simple.horizontalHeaderItem(0)
@@ -359,10 +431,10 @@ class Ui_MainWindow(object):
         self.textEdit_advanced_query.setPlaceholderText(_translate("MainWindow", "Introduzca sus términos de búsqueda. . ."))
         self.label_4.setText(_translate("MainWindow", "Cuenta de usuario:"))
         self.textEdit_user_handle.setPlaceholderText(_translate("MainWindow", "Introduzca el handle del usuario sobre el que quiere realizar la búsqueda. . ."))
-        self.checkBox_date_to.setText(_translate("MainWindow", "Fecha - Hasta"))
         self.checkBox_date_from.setText(_translate("MainWindow", "Fecha - Desde:"))
-        self.radioButton_full_archive.setText(_translate("MainWindow", "Búqueda de archivo"))
         self.radioButton_30_day.setText(_translate("MainWindow", "Búsqueda 30 días"))
+        self.checkBox_date_to.setText(_translate("MainWindow", "Fecha - Hasta"))
+        self.radioButton_full_archive.setText(_translate("MainWindow", "Búqueda de archivo"))
         self.advanced_search_button.setText(_translate("MainWindow", "Buscar"))
         self.tableWidget_advanced.setSortingEnabled(True)
         item = self.tableWidget_advanced.horizontalHeaderItem(0)
@@ -388,8 +460,11 @@ class Ui_MainWindow(object):
         item = self.tableWidget_following.horizontalHeaderItem(3)
         item.setText(_translate("MainWindow", "Creación"))
         item = self.tableWidget_following.horizontalHeaderItem(4)
+        item.setText(_translate("MainWindow", "Buscar"))
+        item = self.tableWidget_following.horizontalHeaderItem(5)
         item.setText(_translate("MainWindow", "Siguiendo desde"))
         self.tab_widget.setTabText(self.tab_widget.indexOf(self.tab_5), _translate("MainWindow", "Cuentas seguidas"))
+
 
     def basic_twitter_search(self):
         self.__populate_simple_search_table()
@@ -422,10 +497,10 @@ class Ui_MainWindow(object):
             loading_dialog = self.__loading_menu("tweets", horizontal_size=250)
             profile_image_list = []
             self.tableWidget_simple.setRowCount(0)
-            tweets = self.twitter_handler.custom_twitter_search(query)
-            self.tableWidget_simple.setRowCount(len(tweets))
+            self.last_basic_tweets = self.twitter_handler.custom_twitter_search(query)
+            self.tableWidget_simple.setRowCount(len(self.last_basic_tweets))
 
-            for i in range(len(tweets)):
+            for i in range(len(self.last_basic_tweets)):
                 item = QtWidgets.QTableWidgetItem()
                 item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
                 self.tableWidget_simple.setItem(i, 0, item)
@@ -442,22 +517,29 @@ class Ui_MainWindow(object):
                 item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
                 self.tableWidget_simple.setItem(i, 4, item)
 
-                profile_image_list.append(tweets[i].user.profile_image_url_https)
+                profile_image_list.append(
+                    self.last_basic_tweets[i].user.profile_image_url_https
+                )
 
                 followed_image_label = self.__get_followed_image_label(
-                    tweets[i].user.screen_name
+                    self.last_basic_tweets[i].user.screen_name
                 )
 
-                self.tableWidget_simple.item(i, 1).setText(tweets[i].user.screen_name)
+                self.tableWidget_simple.item(i, 1).setText(
+                    self.last_basic_tweets[i].user.screen_name
+                )
                 self.tableWidget_simple.setCellWidget(i, 2, followed_image_label)
                 self.tableWidget_simple.item(i, 3).setText(
-                    tweets[i].created_at.strftime("%Y-%m-%d %H:%M:%S")
+                    self.last_basic_tweets[i].created_at.strftime("%Y-%m-%d %H:%M:%S")
+                )
+                self.last_basic_tweets[i].full_text = (
+                    f"RT @{self.last_basic_tweets[i].retweeted_status.user.screen_name}: "
+                    + self.last_basic_tweets[i].retweeted_status.full_text
+                    if self.last_basic_tweets[i].full_text.startswith("RT @")
+                    else self.last_basic_tweets[i].full_text
                 )
                 self.tableWidget_simple.item(i, 4).setText(
-                    f"RT @{tweets[i].retweeted_status.user.screen_name}: "
-                    + tweets[i].retweeted_status.full_text
-                    if tweets[i].full_text.startswith("RT @")
-                    else tweets[i].full_text
+                    self.last_basic_tweets[i].full_text
                 )
 
             self.launch_profile_image_thread(
@@ -483,15 +565,15 @@ class Ui_MainWindow(object):
 
             if self.radioButton_30_day.isChecked():
                 try:
-                    tweets = self.twitter_handler.thirty_day_search(
-                        query, 
-                        handle, 
+                    self.last_advanced_tweets = self.twitter_handler.thirty_day_search(
+                        query,
+                        handle,
                         self.dateEdit_from.text()
                         if self.checkBox_date_from.isChecked()
                         else -1,
                         self.dateEdit_to.text()
                         if self.checkBox_date_to.isChecked()
-                        else -1
+                        else -1,
                     )
                 except:
                     QtWidgets.QMessageBox().critical(
@@ -504,7 +586,7 @@ class Ui_MainWindow(object):
                     return
             else:
                 try:
-                    tweets = self.twitter_handler.full_archive_search(
+                    self.last_advanced_tweets = self.twitter_handler.full_archive_search(
                         query,
                         handle,
                         self.dateEdit_from.text()
@@ -512,7 +594,7 @@ class Ui_MainWindow(object):
                         else -1,
                         self.dateEdit_to.text()
                         if self.checkBox_date_to.isChecked()
-                        else -1
+                        else -1,
                     )
                 except:
                     QtWidgets.QMessageBox().critical(
@@ -524,9 +606,9 @@ class Ui_MainWindow(object):
 
                     return
 
-            self.tableWidget_advanced.setRowCount(len(tweets))
+            self.tableWidget_advanced.setRowCount(len(self.last_advanced_tweets))
 
-            for i in range(len(tweets)):
+            for i in range(len(self.last_advanced_tweets)):
                 item = QtWidgets.QTableWidgetItem()
                 item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
                 self.tableWidget_advanced.setItem(i, 0, item)
@@ -543,19 +625,21 @@ class Ui_MainWindow(object):
                 item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
                 self.tableWidget_advanced.setItem(i, 4, item)
 
-                profile_image_list.append(tweets[i].user.profile_image_url_https)
+                profile_image_list.append(self.last_advanced_tweets[i].user.profile_image_url_https)
 
                 followed_image_label = self.__get_followed_image_label(
-                    tweets[i].user.screen_name
+                    self.last_advanced_tweets[i].user.screen_name
                 )
 
-                tweet_text = self.__recover_archive_tweet_text(tweets[i])
-                self.tableWidget_advanced.item(i, 1).setText(tweets[i].user.screen_name)
+                self.last_advanced_tweets[i].full_text = self.__recover_archive_tweet_text(self.last_advanced_tweets[i])
+                self.tableWidget_advanced.item(i, 1).setText(self.last_advanced_tweets[i].user.screen_name)
                 self.tableWidget_advanced.setCellWidget(i, 2, followed_image_label)
                 self.tableWidget_advanced.item(i, 3).setText(
-                    tweets[i].created_at.strftime("%Y-%m-%d %H:%M:%S")
+                    self.last_advanced_tweets[i].created_at.strftime("%Y-%m-%d %H:%M:%S")
                 )
-                self.tableWidget_advanced.item(i, 4).setText(tweet_text)
+                self.tableWidget_advanced.item(i, 4).setText(
+                    self.last_advanced_tweets[i].full_text
+                )
 
             self.launch_profile_image_thread(
                 self.tableWidget_advanced, profile_image_list
@@ -567,10 +651,10 @@ class Ui_MainWindow(object):
         profile_image_list = []
         self.tableWidget_following.setRowCount(0)
 
-        accounts = self.database_handler.read_followed_accounts()
-        self.tableWidget_following.setRowCount(len(accounts))
+        self.following_list = self.database_handler.read_followed_accounts()
+        self.tableWidget_following.setRowCount(len(self.following_list))
 
-        for i in range(len(accounts)):
+        for i in range(len(self.following_list)):
             item = QtWidgets.QTableWidgetItem()
             item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
             self.tableWidget_following.setItem(i, 0, item)
@@ -586,20 +670,25 @@ class Ui_MainWindow(object):
             item = QtWidgets.QTableWidgetItem()
             item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
             self.tableWidget_following.setItem(i, 4, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+            self.tableWidget_following.setItem(i, 5, item)
 
             additional_acc_info = self.twitter_handler.recover_account_info(
-                accounts[i][0]
+                self.following_list[i][0]
             )
 
             profile_image_list.append(additional_acc_info.profile_image_url_https)
 
-            followed_image_label = self.__get_followed_image_label(accounts[i][0])
-            self.tableWidget_following.item(i, 1).setText(accounts[i][0])
+            followed_image_label = self.__get_followed_image_label(self.following_list[i][0])
+            lookup_image_label = self.__get_following_image_label(self.following_list[i][0])
+            self.tableWidget_following.item(i, 1).setText(self.following_list[i][0])
             self.tableWidget_following.setCellWidget(i, 2, followed_image_label)
             self.tableWidget_following.item(i, 3).setText(
                 additional_acc_info.created_at.strftime("%Y-%m-%d %H:%M:%S")
             )
-            self.tableWidget_following.item(i, 4).setText(accounts[i][1])
+            self.tableWidget_following.setCellWidget(i, 4, lookup_image_label)
+            self.tableWidget_following.item(i, 5).setText(self.following_list[i][1])
 
         self.launch_profile_image_thread(self.tableWidget_following, profile_image_list)
         loading_dialog.close()
@@ -647,15 +736,39 @@ class Ui_MainWindow(object):
         try:
             if self.database_handler.find_followed_account(twitter_handle):
                 pixmap = QtGui.QPixmap("./src/resources/images/check_mark.png")
+                image_label.setToolTip("Pulse para dejar de seguir.")
                 image_label.clicked.connect(
                     lambda: self.__unfollow_account(twitter_handle, image_label)
                 )
             else:
                 pixmap = QtGui.QPixmap("./src/resources/images/follow_account.png")
+                image_label.setToolTip("Pulse para empezar a seguir.")
                 image_label.clicked.connect(
                     lambda: self.__follow_account(twitter_handle, image_label)
                 )
 
+            image_label.setPixmap(pixmap)
+
+        except:
+            image_label.setText("")
+
+        return container_widget
+
+    def __get_following_image_label(self, handle):
+        container_widget = QtWidgets.QWidget()
+        center_layout = QtWidgets.QHBoxLayout()
+
+        image_label = ClickableLabel()
+        image_label.setFixedSize(60, 60)
+        image_label.setScaledContents(True)
+
+        center_layout.addWidget(image_label)
+        container_widget.setLayout(center_layout)
+
+        try:
+            pixmap = QtGui.QPixmap("./src/resources/images/lookup_tweets.png")
+            image_label.setToolTip("Pulse para empezar a seguir.")
+            image_label.clicked.connect(lambda: self.lookup_following_tweets_single_account(handle))
             image_label.setPixmap(pixmap)
 
         except:
@@ -673,6 +786,7 @@ class Ui_MainWindow(object):
         if result == QtWidgets.QMessageBox.Yes:
             self.database_handler.add_account(twitter_handle)
             image_label.clicked.disconnect()
+            image_label.setToolTip("Pulse para dejar de seguir.")
             image_label.setPixmap(
                 QtGui.QPixmap("./src/resources/images/check_mark.png")
             )
@@ -690,6 +804,7 @@ class Ui_MainWindow(object):
         if result == QtWidgets.QMessageBox.Yes:
             self.database_handler.delete_followed_account(twitter_handle)
             image_label.clicked.disconnect()
+            image_label.setToolTip("Pulse para empezar a seguir.")
             image_label.setPixmap(
                 QtGui.QPixmap("./src/resources/images/follow_account.png")
             )
@@ -700,7 +815,7 @@ class Ui_MainWindow(object):
     def __generate_message_box(self):
         message_box = QtWidgets.QMessageBox()
         message_box.setIcon(QtWidgets.QMessageBox.Question)
-        message_box.setWindowTitle("Confirmación de seguimiento")
+        message_box.setWindowTitle("Confirmación")
         message_box.setStandardButtons(
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
@@ -747,9 +862,97 @@ class Ui_MainWindow(object):
     def radio_30_day_clicked(self):
         min_date = date.today() - timedelta(days=30)
         min_date = min_date.strftime("%d/%m/%Y").split("/")
-        self.dateEdit_from.setMinimumDate(QtCore.QDate(int(min_date[2]), int(min_date[1]), int(min_date[0])))
-        self.dateEdit_to.setMinimumDate(QtCore.QDate(int(min_date[2]), int(min_date[1]), int(min_date[0])))
+        self.dateEdit_from.setMinimumDate(
+            QtCore.QDate(int(min_date[2]), int(min_date[1]), int(min_date[0]))
+        )
+        self.dateEdit_to.setMinimumDate(
+            QtCore.QDate(int(min_date[2]), int(min_date[1]), int(min_date[0]))
+        )
 
     def radio_full_archive_clicked(self):
         self.dateEdit_from.setMinimumDate(QtCore.QDate(2006, 3, 21))
         self.dateEdit_to.setMinimumDate(QtCore.QDate(2006, 3, 21))
+
+    def save_basic_search(self):
+        if not self.last_basic_tweets:
+            self.__show_save_error()
+        else:
+            message_box = self.__generate_message_box()
+            message_box.setText(
+                "¿Desea guardar la última consulta rápida en formato CSV?"
+            )
+            result = message_box.exec_()
+
+            if result == QtWidgets.QMessageBox.Yes:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                with open(
+                    f"./src/saved_queries/simple_search_result_{timestamp}.csv", "w"
+                ) as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["id", "screen_name", "created_at", "text"])
+                    for tweet in self.last_basic_tweets:
+                        writer.writerow(
+                            [
+                                tweet.id,
+                                tweet.user.screen_name,
+                                tweet.created_at,
+                                tweet.full_text.encode("utf-8"),
+                            ]
+                        )
+
+    def save_advanced_search(self):
+        if not self.last_advanced_tweets:
+            self.__show_save_error()
+        else:
+            message_box = self.__generate_message_box()
+            message_box.setText(
+                "¿Desea guardar la última consulta en profundidad en formato CSV?"
+            )
+            result = message_box.exec_()
+
+            if result == QtWidgets.QMessageBox.Yes:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                with open(
+                    f"./src/saved_queries/advanced_search_result_{timestamp}.csv", "w"
+                ) as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["id", "screen_name", "created_at", "text"])
+
+                    for tweet in self.last_advanced_tweets:
+                        writer.writerow(
+                            [
+                                tweet.id,
+                                tweet.user.screen_name,
+                                tweet.created_at,
+                                tweet.full_text.encode("utf-8"),
+                            ]
+                        )
+
+    def lookup_following_tweets(self):
+        if not self.following_list:
+            QtWidgets.QMessageBox().critical(
+            self.centralwidget,
+            "Error",
+            "Debe actualizar la lista de cuentas seguidas antes de hacer la consulta (y tener, al menos, una cuenta seguida).",
+            )
+        else:
+            str_following = "("
+            for account in self.following_list:
+                str_following += f"from:{account[0]} OR "
+            str_following = str_following [:len(str_following)-4] + ")"
+            
+            self.tab_widget.setCurrentIndex(0)
+            self.textEdit.setText(str_following)
+            self.search_button.click()
+
+    def lookup_following_tweets_single_account(self, handle):
+            self.tab_widget.setCurrentIndex(0)
+            self.textEdit.setText(f"from:{handle}")
+            self.search_button.click()
+
+    def __show_save_error(self):
+        QtWidgets.QMessageBox().critical(
+            self.centralwidget,
+            "Error",
+            "Debe haber hecho una consulta para poder guardarla",
+        )

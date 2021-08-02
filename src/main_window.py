@@ -434,7 +434,7 @@ class Ui_MainWindow(object):
         self.checkBox_date_from.setText(_translate("MainWindow", "Fecha - Desde:"))
         self.radioButton_30_day.setText(_translate("MainWindow", "Búsqueda 30 días"))
         self.checkBox_date_to.setText(_translate("MainWindow", "Fecha - Hasta"))
-        self.radioButton_full_archive.setText(_translate("MainWindow", "Búqueda de archivo"))
+        self.radioButton_full_archive.setText(_translate("MainWindow", "Búsqueda en archivo"))
         self.advanced_search_button.setText(_translate("MainWindow", "Buscar"))
         self.tableWidget_advanced.setSortingEnabled(True)
         item = self.tableWidget_advanced.horizontalHeaderItem(0)
@@ -842,7 +842,7 @@ class Ui_MainWindow(object):
         return str_tweet
 
     def launch_profile_image_thread(self, table, profile_image_list):
-        self.thread = QtCore.QThread()
+        self.thread = QtCore.QThread(self.centralwidget)
         self.worker = ImageLoader()
         self.worker.moveToThread(self.thread)
 

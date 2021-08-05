@@ -7,3 +7,4 @@ pyqt interfaces/
 .vscode
 src/resources/api_keys
 src/saved_queries
+chromedriver.exe

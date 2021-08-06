@@ -1,3 +1,4 @@
+import sys
 import time
 import socket
 import random
@@ -10,15 +11,16 @@ from selenium.webdriver.support import expected_conditions
 
 
 class BotClient():
-    def __init__(self):
+    def __init__(self, config_file):
+        self.config_file = config_file[1]
         self.bot_ip = "0.0.0.0"
         self.bot_port = random.randint(5000, 9999)
 
         self.c2_ip = "127.0.0.1"
         self.c2_port = 50003
 
-        self.sleep_time = 2
-        self.reduced_sleep_time = 0.5
+        self.sleep_time = 1
+        self.reduced_sleep_time = 0.2
         self.twitter_reply = "Muy buen tweet, estoy de acuerdo!"
 
         self.init_chrome_driver()
@@ -33,9 +35,7 @@ class BotClient():
         self.browser = webdriver.Chrome("./chromedriver.exe", options=options)
 
     def twitter_login(self):
-        email = "egstfm1@gmail.com"
-        username = "egs_tfm_1"
-        password = "2021egstfm1"
+        email, username, password = self.read_config_file()
 
         self.print_separator()
         print("Bot attempting to log in to Twitter. . .")
@@ -72,7 +72,7 @@ class BotClient():
                 sock_send.sendto(str(self.bot_port).encode("utf-8"), (self.c2_ip, self.c2_port))
 
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock_recv:
-                    sock_recv.settimeout(self.sleep_time)
+                    sock_recv.settimeout(5)
                     try:
                         sock_recv.bind((self.bot_ip, self.bot_port))
                         msg, _ = sock_recv.recvfrom(1024)
@@ -137,10 +137,29 @@ class BotClient():
 
         time.sleep(5)
         
+    def read_config_file(self):
+        with open(self.config_file, "r") as config:
+            try:
+                self.print_separator()
+                print("Attempting to read config file. . .")
 
-        
+                file_content = config.readlines()
+                email = file_content[0].replace("\n", "")
+                password = file_content[1].replace("\n", "")
+                username = file_content[2].replace("\n", "")
+
+                return email, password, username
+
+            except:
+                print("Error while reading config from file, program will terminate")
+                sys.exit(-1)
+
     def print_separator(self):
         print("\n---------------------\n")
 
 if __name__ == '__main__':
-    BotClient()
+    if len(sys.argv) != 2:
+        print("Error, you need to pass a proper configuration file as an argument.")
+        print("Usage: python test_client.py bot1.cfg")
+    else:
+        BotClient(sys.argv)

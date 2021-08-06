@@ -8,3 +8,4 @@ pyqt interfaces/
 src/resources/api_keys
 src/saved_queries
 chromedriver.exe
+bot*.cfg

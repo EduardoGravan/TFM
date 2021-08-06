@@ -1,13 +1,12 @@
+import time
 import socket
 import random
-import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-
 
 
 class BotClient():
@@ -18,7 +17,9 @@ class BotClient():
         self.c2_ip = "127.0.0.1"
         self.c2_port = 50003
 
-        self.sleep_time = 3
+        self.sleep_time = 2
+        self.reduced_sleep_time = 0.5
+        self.twitter_reply = "Muy buen tweet, estoy de acuerdo!"
 
         self.init_chrome_driver()
         self.twitter_login()
@@ -91,13 +92,13 @@ class BotClient():
         print("Listening for incoming commands from C2 server. . .")
         self.print_separator()
 
-        #while True:
-        data, addr = sock.recvfrom(1024)
-        data = data.decode("utf-8")
-        print("Command received: ")
-        print(f"rcv: {data} from {addr}")
-        self.print_separator()
-        self.execute_command(data)
+        while True:
+            data, addr = sock.recvfrom(1024)
+            data = data.decode("utf-8")
+            print("Command received: ")
+            print(f"rcv: {data} from {addr}")
+            self.print_separator()
+            self.execute_command(data)
 
     def execute_command(self, command):
         command = command.split("|")
@@ -111,16 +112,31 @@ class BotClient():
         like_button.click()
         print("Bot is liking the status. . .")
         
-        time.sleep(self.sleep_time)
+        time.sleep(self.reduced_sleep_time)
 
         retweet_button = WebDriverWait(self.browser, 10).until(expected_conditions.element_to_be_clickable((By.XPATH, "//div[@aria-label='Retweet']")))
         retweet_button.click()
         print("Bot is retweeting the status. . .")
         confirm_retweet_button = WebDriverWait(self.browser, 10).until(expected_conditions.element_to_be_clickable((By.XPATH, "//div[@data-testid='retweetConfirm']")))
         confirm_retweet_button.click()
-        self.print_separator()
+
+        time.sleep(self.reduced_sleep_time)
+
+        comment_button = WebDriverWait(self.browser, 10).until(expected_conditions.element_to_be_clickable((By.XPATH, "//div[@aria-label='Reply']")))
+        comment_button.click()
+        print("Bot is replying to the status. . .")
+        time.sleep(self.reduced_sleep_time)
+        tweet_text = self.browser.find_elements_by_css_selector("br[data-text='true']")
+        tweet_text[0].send_keys(self.twitter_reply)
+        tweet_button = WebDriverWait(self.browser, 10).until(expected_conditions.element_to_be_clickable((By.XPATH, "//div[@data-testid='tweetButton']")))
+        tweet_button.click()
+
+        print("Democracy successfully destroyed!")
         
-        time.sleep(self.sleep_time)
+        self.print_separator()
+
+        time.sleep(5)
+        
 
         
     def print_separator(self):

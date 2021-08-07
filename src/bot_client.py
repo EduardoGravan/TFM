@@ -44,8 +44,8 @@ class BotClient():
         self.browser.get("https://www.twitter.com/login")
         time.sleep(self.sleep_time)
 
-        username_input = self.browser.find_element_by_name("session[username_or_email]")
-        password_input = self.browser.find_element_by_name("session[password]")
+        username_input = WebDriverWait(self.browser, 10).until(expected_conditions.visibility_of_element_located((By.NAME, "session[username_or_email]")))
+        password_input = WebDriverWait(self.browser, 10).until(expected_conditions.visibility_of_element_located((By.NAME, "session[password]")))
 
         username_input.send_keys(email)
         password_input.send_keys(password)
@@ -53,8 +53,8 @@ class BotClient():
         time.sleep(self.sleep_time)
         
         if self.browser.current_url != "https://www.twitter.com/home":
-            username_input = self.browser.find_element_by_name("session[username_or_email]")
-            password_input = self.browser.find_element_by_name("session[password]")
+            username_input = WebDriverWait(self.browser, 10).until(expected_conditions.visibility_of_element_located((By.NAME, "session[username_or_email]")))
+            password_input = WebDriverWait(self.browser, 10).until(expected_conditions.visibility_of_element_located((By.NAME, "session[password]")))
 
             username_input.send_keys(username)
             password_input.send_keys(password)
@@ -135,7 +135,7 @@ class BotClient():
         
         self.print_separator()
 
-        time.sleep(5)
+        time.sleep(self.sleep_time)
         
     def read_config_file(self):
         with open(self.config_file, "r") as config:

@@ -63,4 +63,4 @@ class DatabaseHandler:
             print("Error while trying to delete followed twitter account.")
 
     def __get_timestamp(self):
-        return datetime.now().strftime(("%Y-%m-%d %H:%M:%S"))
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")

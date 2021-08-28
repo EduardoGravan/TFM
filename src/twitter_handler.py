@@ -48,9 +48,6 @@ class TwitterHandler:
     def recover_account_info(self, handle):
         return self.api.get_user(handle)
 
-    def __print_separator(self):
-        print("\n---------------------\n")
-
     def lookup_users(self, query):
         return self.api.search_users(query, 2)
 
@@ -99,6 +96,9 @@ class TwitterHandler:
                 result = self.api.search_full_archive("tfm", full_query)
 
         return result
+
+    def __print_separator(self):
+        print("\n---------------------\n")
 
     def __format_date_to_archive(self, date):
         formatted_date = date.split("/")

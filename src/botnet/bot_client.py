@@ -11,8 +11,8 @@ from selenium.webdriver.support import expected_conditions
 
 
 class BotClient():
-    def __init__(self, config_file):
-        self.config_file = config_file[1]
+    def __init__(self, argv):
+        self.config_file = argv[1]
         self.bot_ip = "0.0.0.0"
         self.bot_port = random.randint(5000, 9999)
 
@@ -32,6 +32,7 @@ class BotClient():
     def init_chrome_driver(self):
         options = Options()
         options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        #options.add_argument("--headless")
         self.browser = webdriver.Chrome("./chromedriver.exe", options=options)
 
     def twitter_login(self):
@@ -52,7 +53,7 @@ class BotClient():
         password_input.send_keys(Keys.ENTER)
         time.sleep(self.sleep_time)
         
-        if self.browser.current_url != "https://www.twitter.com/home":
+        if self.browser.current_url != "https://twitter.com/home":
             username_input = WebDriverWait(self.browser, 10).until(expected_conditions.visibility_of_element_located((By.NAME, "session[username_or_email]")))
             password_input = WebDriverWait(self.browser, 10).until(expected_conditions.visibility_of_element_located((By.NAME, "session[password]")))
 

@@ -44,6 +44,7 @@ class Ui_MainWindow(object):
         self.following_list = []
 
         app = QtWidgets.QApplication(sys.argv)
+        app.setWindowIcon(QtGui.QIcon("./src/resources/images/logo_master.png"))
         MainWindow = QtWidgets.QMainWindow()
         self.setupUi(MainWindow)
 

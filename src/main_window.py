@@ -887,7 +887,7 @@ class Ui_MainWindow(object):
             if result == QtWidgets.QMessageBox.Yes:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 with open(
-                    f"./src/saved_queries/simple_search_result_{timestamp}.csv", "w"
+                    f"./src/saved_queries/simple_search_result_{timestamp}.csv", "w", newline='', encoding="utf-8"
                 ) as f:
                     writer = csv.writer(f)
                     writer.writerow(["id", "screen_name", "created_at", "text"])
@@ -897,7 +897,7 @@ class Ui_MainWindow(object):
                                 tweet.id,
                                 tweet.user.screen_name,
                                 tweet.created_at,
-                                tweet.full_text.encode("utf-8"),
+                                tweet.full_text.replace("\n", " "),
                             ]
                         )
 
